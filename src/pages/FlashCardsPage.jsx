@@ -13,14 +13,15 @@ import Main from '../components/Main';
 import Button from '../components/Button';
 import Loading from '../components/Loading';
 import Error from '../components/Error';
+import RadioButton from '../components/RadioButton';
+import FlashCardItem from '../components/FlashCardItem';
+import FlashCardForm from '../components/FlashCardForm';
 
 //Database
-import { apiGetAllFlashCards } from '../services/apiService';
+import { apiCreateFlashCard, apiDeleteFlashCard, apiGetAllFlashCards, apiUpdateFlashCard } from '../services/apiService';
 
 // Helpers Functions
 import { helperShuffleArray } from '../helpers/arrayHelpers';
-import RadioButton from '../components/RadioButton';
-import FlashCardItem from '../components/FlashCardItem';
 
 export default function FlashCardsPage() {
     
@@ -32,6 +33,9 @@ export default function FlashCardsPage() {
     const [radioButtonShowTitle, setRadioButtonShowTitle] = useState(true);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState('');
+    const [createMode, setCreateMode] = useState(true);
+    const [selectedTab, setSelectedTab] = useState(0);
+    const [selectedFlashCard, setSelectedFlashCard] = useState(null);
 
     useEffect(() => {
         // Promise
@@ -97,8 +101,56 @@ export default function FlashCardsPage() {
         setStudyCards(updatedCards);
     }
 
-    function handleDeleteFlashCard(cardId) {
-        console.log(cardId);
+    async function handleDeleteFlashCard(cardId) {
+        try {
+            await apiDeleteFlashCard(cardId);
+            setAllCards(allCards.filter(card => card.id !== cardId));
+            setError('');
+        } catch (error) {
+            setError(error.message);
+        }
+    }
+
+    function handleEditFlashCard(card) {
+      setCreateMode(false);
+      setSelectedTab(1);
+      setSelectedFlashCard(card);
+    }
+
+    function handleTabSelect(tabIndex) {
+        setSelectedTab(tabIndex);
+    }
+
+    function handleNewFlashCard() {
+        setCreateMode(true);
+        setSelectedFlashCard(null);
+    }
+
+    async function handlePersist(title, description) {
+        if (createMode) {
+            try {
+                const newFlashCard = await apiCreateFlashCard(title, description);
+                setAllCards([...allCards, newFlashCard]);
+                setError('');
+            } catch (error) {
+                setError(error.message);
+            }
+        } else {
+            try {
+                await apiUpdateFlashCard(selectedFlashCard.id, title, description);
+                setAllCards(allCards.map(card => {
+                    if (card.id === selectedFlashCard.id) {
+                        return { ...card, title, description };
+                    }
+                    return card;
+                })); 
+                setSelectedFlashCard(null);
+                setCreateMode(true);
+                setError('');
+            } catch (error) {
+                setError(error.messsage);
+            }
+        }
     }
 
     let mainJsx = (
@@ -111,9 +163,9 @@ export default function FlashCardsPage() {
         mainJsx = <Error>{ error }</Error>;
     }
 
-    if (!loading) {
+    if (!loading && !error) {
         mainJsx = (<>
-            <Tabs>
+            <Tabs selectedIndex={ selectedTab } onSelect={ handleTabSelect }>
                 <TabList>
                     <Tab>Listagem</Tab>
                     <Tab>Cadastro</Tab>
@@ -122,12 +174,26 @@ export default function FlashCardsPage() {
                 <TabPanel>
                     {
                         allCards.map(flashCard => {
-                            return <FlashCardItem key={ flashCard.id } onDelete={ handleDeleteFlashCard } >{ flashCard }</FlashCardItem>
+                            return <FlashCardItem 
+                            key={ flashCard.id } 
+                            onDelete={ handleDeleteFlashCard }
+                            onEdit={ handleEditFlashCard } 
+                            >
+                                { flashCard }
+                            </FlashCardItem>
                         })
                     }
                 </TabPanel>
                 <TabPanel>
-                    <h2>Cadastro</h2>
+                    <div className='my-4'>
+                        <Button onButtonClick={ handleNewFlashCard } >Novo FlashCard</Button>
+                    </div>
+                    <FlashCardForm 
+                        createMode={ createMode } 
+                        onPersist={ handlePersist }
+                    >
+                        { selectedFlashCard }
+                    </FlashCardForm>
                 </TabPanel>
                 <TabPanel>
                     <div className="text-center mb-4">

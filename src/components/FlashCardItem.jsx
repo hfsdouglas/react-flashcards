@@ -3,12 +3,18 @@ import {
     AiOutlineDelete as DeleteIcon 
 } from 'react-icons/ai';
 
-export default function FlashCardItem({ children: flashCard, onDelete = null }) {
+export default function FlashCardItem({ children: flashCard, onDelete = null, onEdit = null }) {
     const { title, description } = flashCard;
 
     function handleDeleteIconClick() {
         if (onDelete) {
             onDelete(flashCard.id);
+        }
+    }
+
+    function handleEditIconClick() {
+        if (onEdit) {
+            onEdit(flashCard);
         }
     }
 
@@ -19,7 +25,7 @@ export default function FlashCardItem({ children: flashCard, onDelete = null }) 
                 <li><strong>Descrição: </strong><span>{ description }</span></li>
             </ul>
             <div className='mt-4 flex flex-row items-center justify-end space-x-4'>
-                <EditIcon size={ 24 } className="cursor-pointer" />
+                <EditIcon size={ 24 } className="cursor-pointer" onClick={ handleEditIconClick } />
                 <DeleteIcon onClick={ handleDeleteIconClick } size={ 24 } className="cursor-pointer" />
             </div>
         </div>

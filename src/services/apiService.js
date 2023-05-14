@@ -1,8 +1,28 @@
-import { get } from "./httpService";
-
-const BACK_END_URL = 'http://localhost:3001/flashcards';
+import { create, read, exclude, edit } from "./httpService";
+import { getNewId } from "./idService";
 
 export async function apiGetAllFlashCards() {
-    const allFlashCards = await get(BACK_END_URL);
+    const allFlashCards = await read('/flashcards');
     return allFlashCards;
+}
+
+export async function apiDeleteFlashCard(cardId) {
+    await exclude(`/flashcards/${cardId}`);
+}
+
+export async function apiCreateFlashCard(title, description) {
+    const newFlashCard = create('/flashcards', { 
+        id: getNewId(),
+        title,
+        description
+    });
+    return newFlashCard;
+}
+
+export async function apiUpdateFlashCard(cardId, title, description) {
+    const updatedFlashCard = edit(`/flashcards/${cardId}`, {
+        title, 
+        description
+    });
+    return updatedFlashCard;
 }
